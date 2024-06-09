@@ -59,7 +59,6 @@ def send_msg(CLIENTS_TO_SEND,SEND_BY,msg):
     msg=msg+SEND_BY_CODE+SEND_BY
     for client in CLIENTS_TO_SEND:
         msg_length=((b' '*(HEADER-len(str(len(msg)))))+str(len(msg)).encode(ENCODING))
-        print("sending to  ",client)
         client[0].send(msg_length)
         client[0].send((msg).encode(ENCODING))
 
