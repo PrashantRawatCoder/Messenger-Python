@@ -2,10 +2,14 @@ import socket
 import threading
 
 IP = "192.168.221.164"
-PORT=6000
+PORT=6002
 ENCODING='utf-8'
 HEADER=64
-disconnect_msg="!DISCONNECT"
+DISCONNECT_CODE="!DISCONNECT"
+NEW_CLINT_CODE= "!(NEW_CLIENT_CONNECTED)"
+SEND_BY_CODE='!(SEND_BY)'
+SEND_TO_CODE='!(SEND_TO)'
+CLIENTS_STR=""
 CLIENTS=[]
 
 def start_server():
@@ -13,38 +17,52 @@ def start_server():
     server.bind((IP,PORT))
     server.listen()
     print("[LISTINING] ........")
-    global CLIENTS
     while True:
-        client_socket,client_ip=server.accept()
-        CLIENTS.append((client_socket,client_ip))
-        print(f"[CONNECTED] {client_ip}")
-        client_handler=threading.Thread(target=recieve_msg,args=(client_ip,client_socket,server))
-        client_handler.start()
+        client_socket,client_addr=server.accept()
+        print(f"[CONNECTED] {client_addr}")
+        send_new_client_id(client_socket,client_addr)
+        msg_reciever = threading.Thread(target=recieve_msg,args=(server,))
+        msg_reciever.start()
 
-def recieve_msg(client_ip,client_socket,server):
+def send_new_client_id(client_socket,client_addr):
+    global CLIENTS
+    CLIENTS.append((client_socket,client_addr[0],client_addr[1],len(CLIENTS)+1))
+    if not CLIENTS_STR :
+        CLIENTS_STR.join('/--/') 
+    CLIENTS_STR.join(str(client_addr[0])+'/'+str(client_addr[1])+"/"+str(len(CLIENTS)+1))
+    
+    send_msg(CLIENTS[:-1],'SERVER',NEW_CLINT_CODE)
+    send_msg(CLIENTS[:-1],"SERVER",''.join(str(k)+'/' for k in CLIENTS[-1][1:])[:-1])
+    #Above line sends message to all clients except new client that (ip of new client/port of new client/id)
+    send_msg([CLIENTS[-1]],"SERVER",CLIENTS_STR)
+
+def recieve_msg(server):
+    client_socket=CLIENTS[-1][0]
+    client_id=CLIENTS[-1][-1]
     while True:
         msg_length=client_socket.recv(HEADER)
         if msg_length:
             msg_length = int(msg_length.decode(ENCODING))
             msg = client_socket.recv(msg_length).decode(ENCODING)
-            send_msg_to = client_socket.recv(HEADER).decode(ENCODING)
-            if msg==disconnect_msg:
-                send_msg(client_socket,client_ip,msg=disconnect_msg)
-                print(f"[{client_ip}] DISSCONNECTED FROM CLIENT !")
+            print(msg)
+            msg,send_msg_to = msg.split(SEND_TO_CODE)
+            if msg==DISCONNECT_CODE:
+                send_msg([CLIENTS[client_id-1],],"SERVER" ,msg=DISCONNECT_CODE)
+                print(f"[{client_id}] DISSCONNECTED FROM CLIENT !")
                 server.close()
                 return
-            print(f"[{client_ip}] : {msg}")
+            print(f"[{client_id}] : {msg}")
             print(f" send to {send_msg_to}")
 
-def send_msg(client_socket ,client_ip,msg):
+def send_msg(CLIENTS_TO_SEND,SEND_BY,msg):
     global CLIENTS
-    for client in CLIENTS:
+    msg=msg+SEND_BY_CODE+SEND_BY
+    for client in CLIENTS_TO_SEND:
         msg_length=((b' '*(HEADER-len(str(len(msg)))))+str(len(msg)).encode(ENCODING))
+        print("sending to  ",client)
         client[0].send(msg_length)
-        client[0].send(msg.encode(ENCODING))
+        client[0].send((msg).encode(ENCODING))
 
-try:
-    start_server()
-except Exception as e:
-    print(e)
+
+start_server()
 
