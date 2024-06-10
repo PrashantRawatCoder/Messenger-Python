@@ -1,8 +1,8 @@
 import socket
 import threading
 
-SERVER_IP = "192.168.221.164"
-SERVER_PORT=6002
+SERVER_IP = "192.168.131.164"
+SERVER_PORT=6016
 ENCODING='utf-8'
 HEADER=64
 DISCONNECT_CODE="!(DISCONNECT)"
@@ -10,7 +10,7 @@ SEND_BY_CODE='!(SEND_BY)'
 SEND_TO_CODE='!(SEND_TO)'
 NEW_CLIENT_CODE= "!(NEW_CLIENT_CONNECTED)"
 SEND_ALL_CODE='!(SEND_ALL)'
-CLIENTS=[]
+CLIENTS={}
 
 def connect_to_server():
     global client
@@ -33,30 +33,40 @@ def recieve_msg():
             msg=msg.split(SEND_BY_CODE)[0] 
             if msg:
                 for add_client in msg.split('/--/'): #info of every client is seperated by "/--/"
-                    CLIENTS.append(add_client.split("/")) #and ip,port,id are seperated by /
+                    add_client=add_client.split("/")
+                    CLIENTS[add_client[2]]=[add_client[0],add_client[1]] #and ip,port,id are seperated by /
                 print(f"List of Already connected clients : {CLIENTS}")
             break
     while True:
         msg_length = int(client.recv(HEADER).decode(ENCODING))
         msg = client.recv(msg_length).decode(ENCODING)
         msg,send_msg_by = msg.split(SEND_BY_CODE)
+
+        # Handling recieved message
         if msg==DISCONNECT_CODE:
-            print("DISSCONNECTED FROM THE SERVER !")
-            client.close()
-            exit()
+            if send_msg_by=="SERVER":
+                print("DISSCONNECTED FROM THE SERVER !")
+                client.close()
+                exit()
+            else :
+                del CLIENTS[send_msg_by]
+                print(f'[{send_msg_by}] Disconnected !')
+
         elif msg==NEW_CLIENT_CODE:
             msg_length = int(client.recv(HEADER).decode(ENCODING))
             msg = client.recv(msg_length).decode(ENCODING)
             msg,send_msg_by = msg.split(SEND_BY_CODE)
-            CLIENTS.append(msg.split("/"))
+            CLIENTS[msg.split('/')[2]]=msg.split('/')[:-1]
         print(f"[{send_msg_by}] : {msg}")
+        print("[SEND MSG] : ")
 
 
 def msg_sender_thread():
     while True:
-        msg=input("Send Msg : ")
+        msg=input("[SEND MSG ] : \n")
         print("Enter id of Client to which you want to send message:")
-        print(''.join(f"ID : {a_client[2]} , ADDRESS : {a_client[0]}:{a_client[1]}\n") for a_client in CLIENTS)
+        for a_client in CLIENTS:
+            print(f"ID : {a_client} , ADDRESS : {CLIENTS[a_client]}\n")
         print("ID : 0 , ADDRESS : TO ALL CLIENTS")
         send_msg_to=input("Send Message to : ")
         send_msg_to=SEND_ALL_CODE if (not send_msg_to) or (send_msg_to=='0') else send_msg_to
