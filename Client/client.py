@@ -1,21 +1,25 @@
 import socket
 import threading
 from os import getcwd
+import json
 
-SERVER_IP = "192.168.131.164"
-SERVER_PORT=6022
-ENCODING='utf-8'
-HEADER=128
-SAVE_FILE_PATH= getcwd().replace(getcwd().split('/')[-1],'Downloads/')
+with open(getcwd().replace(getcwd().split('/')[-1],'Configuration/config.json'),'r') as config_file:
+    config_data=json.load(config_file)
+SERVER_IP =config_data["SERVER_IP"]
+SERVER_PORT=config_data["SERVER_PORT"]
+ENCODING=config_data["ENCODING"]
+HEADER=config_data["HEADER"]
+SAVE_FILE_PATH=config_data["SAVE_FILE_PATH"] if config_data["SAVE_FILE_PATH"] else getcwd().replace(getcwd().split('/')[-1],'Downloads/')
 
 # CODES
-DISCONNECT_CODE="!(DISCONNECT)"
-SEND_BY_CODE='!(SEND_BY)'
-SEND_TO_CODE='!(SEND_TO)'
-NEW_CLIENT_CODE= "!(NEW_CLIENT_CONNECTED)"
-SEND_ALL_CODE='!(SEND_ALL)'
-SEND_FILE_CODE="!(SEND_FILE)"
+DISCONNECT_CODE=config_data["DISCONNECT_CODE"]
+SEND_BY_CODE=config_data["SEND_BY_CODE"]
+SEND_TO_CODE=config_data["SEND_TO_CODE"]
+NEW_CLIENT_CODE=config_data["NEW_CLIENT_CODE"]
+SEND_ALL_CODE=config_data["SEND_ALL_CODE"]
+SEND_FILE_CODE=config_data["SEND_FILE_CODE"]
 
+#dict of connected clients , {id:(ip,port)}
 CLIENTS={}
 
 def connect_to_server():
@@ -104,5 +108,5 @@ def send_file(file_path,send_msg_to):
     client.send(msg_length)
     client.send(file_data)
         
-
-connect_to_server()
+if __name__=='__main__':
+    connect_to_server()
