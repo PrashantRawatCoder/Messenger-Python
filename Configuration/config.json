@@ -1,0 +1,13 @@
+{
+    "SERVER_IP": "192.168.131.164",
+    "SERVER_PORT": 6022,
+    "ENCODING": "utf-8",
+    "HEADER": 128,
+    "SAVE_FILE_PATH": "",
+    "DISCONNECT_CODE": "!(DISCONNECT)",
+    "SEND_BY_CODE": "!(SEND_BY)",
+    "SEND_TO_CODE": "!(SEND_TO)",
+    "NEW_CLIENT_CODE": "!(NEW_CLIENT_CONNECTED)",
+    "SEND_ALL_CODE": "!(SEND_ALL)",
+    "SEND_FILE_CODE": "!(SEND_FILE)"
+}
